@@ -66,52 +66,52 @@ function connect(){
 	    $("#content").html('');
 		if ('WebSocket' in window){
 		       //ws = new WebSocket("ws://www.isuyu.cn:8086/socketServer/"+$("#username").val());
-               ws = new WebSocket("ws://127.0.0.1:8086/socketServer/"+$("#deviceId").val());
-		}    
+               ws = new WebSocket("ws://222.212.89.53:58080/iot-websocket/socketServer/"+$("#deviceId").val());
+		}
 	    else if ('MozWebSocket' in window){
 	        //ws = new MozWebSocket("ws://www.isuyu.cn:8086/socketServer/"+$("#username").val());
-            ws = new MozWebSocket("ws://127.0.0.1:8086/socketServer/"+$("#deviceId").val());
+            ws = new MozWebSocket("ws://122.212.89.53:58080/iot-websocket/socketServer/"+$("#deviceId").val());
 	    }
 	    else{
-	        alert("该浏览器不支持websocket");    
-	    }    
-	        
-	        
+	        alert("该浏览器不支持websocket");
+	    }
+
+
 	    ws.onmessage = function(evt) {
             var content = $("#content").html();
             $("#content").html(content+'<div style="text-align: right;margin-bottom: 8px">\n' +
                 '                        <p><q style="color: mediumorchid">服务端:</q><span>'+evt.data+ '</span></p>\n' +
                 '                    </div>\n' +
                 '                    <br/>');
-	    };    
-	        
+	    };
+
 	    ws.onclose = function(evt) {
             var content = $("#content").html();
             $("#content").html(content+'<div style="margin-bottom: 8px">\n' +
                 '                        <p><q style="color: coral">客户端:</q><span>连接中断</span></p>\n' +
                 '                    </div>\n' +
                 '                    <br/>');
-	    };    
-	        
+	    };
+
 	    ws.onopen = function(evt) {
             $("#content").html('<div style="margin-bottom: 8px">\n' +
                 '                        <p><q style="color: coral">客户端:</q><span>连接成功...</span></p>\n' +
                 '                    </div>\n' +
                 '                    <br/>');
-	    };  
+	    };
 	}else{
 		alert("请输入您的昵称");
 	}
-}    
-    
-function sendMsg() {    
+}
+
+function sendMsg() {
     ws.send($("#writeMsg").val());
     var content = $("#content").html();
     $("#content").html(content+'<div>\n' +
         '                        <p><q style="color: coral">客户端:</q><span>'+$("#writeMsg").val()+ '</span></p>\n' +
         '                    </div>\n' +
         '                    <br/>');
-}    
+}
 </script>
 </body>
 </html>

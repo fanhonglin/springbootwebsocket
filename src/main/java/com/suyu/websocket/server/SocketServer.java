@@ -1,9 +1,12 @@
 package com.suyu.websocket.server;
 
+import com.suyu.websocket.config.WebSocketConfig;
 import com.suyu.websocket.entity.Client;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
@@ -13,8 +16,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
-@ServerEndpoint(value = "/socketServer/{userName}")
+//@ServerEndpoint(value = "/socketServer/{userName}")
+@ServerEndpoint(value = "/socketServer",configurator = WebSocketConfig.class)
 @Component
+@Slf4j
 public class SocketServer {
 
     private static final Logger logger = LoggerFactory.getLogger(SocketServer.class);
@@ -41,13 +46,20 @@ public class SocketServer {
      * 保存客户端连接信息的socketServers中
      *
      * @param session
-     * @param userName
+     * @param  @PathParam(value = "userName") String userName
      */
     @OnOpen
-    public void open(Session session, @PathParam(value = "userName") String userName) {
+    public void open(Session session,EndpointConfig config) {
+
+//        String httpSessionId = (String) config.getUserProperties().get("sessionid");
+//        log.info("open获取的sessionId:" + httpSessionId);
+
         this.session = session;
-        socketServers.add(new Client(userName, session));
-        logger.info("客户端:【{}】连接成功", userName);
+
+
+
+//        socketServers.add(new Client(userName, session));
+//        logger.info("客户端:【{}】连接成功", userName);
     }
 
     /**
