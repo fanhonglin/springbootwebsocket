@@ -1,28 +1,27 @@
 package com.suyu.websocket.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.session.StandardSessionFacade;
-import org.springframework.context.annotation.Bean;
+import com.suyu.websocket.controller.TestWebSocketController;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.socket.server.standard.ServerEndpointExporter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.HandshakeResponse;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpointConfig;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.Resource;
 
-/**
- * 开启websocket的支持
- */
+
 @Configuration
-@Slf4j
-public class WebSocketConfig extends ServerEndpointConfig.Configurator {
-    @Bean
-    public ServerEndpointExporter serverEndpointExporter(){
-        return new ServerEndpointExporter();
+@EnableWebMvc
+@EnableWebSocket
+public class WebSocketConfig extends WebMvcConfigurerAdapter implements WebSocketConfigurer {
+
+    @Resource
+    private TestWebSocketController testWebSocketController;
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(testWebSocketController, "/socketServer").addInterceptors(new TestHandShakeInterceptor()).setAllowedOrigins("*");
     }
 
 }
