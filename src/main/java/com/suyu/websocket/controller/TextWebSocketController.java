@@ -1,14 +1,16 @@
 package com.suyu.websocket.controller;
 
+import com.suyu.websocket.entity.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.*;
 
-import java.nio.ByteBuffer;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
@@ -18,12 +20,13 @@ public class TextWebSocketController implements WebSocketHandler {
 
     private static final ArrayList<WebSocketSession> sessions = new ArrayList<>();
 
+    private static CopyOnWriteArraySet<Client> socketServers = new CopyOnWriteArraySet<>();
+
     private final Logger LOGGER = LoggerFactory.getLogger(TextWebSocketController.class);
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         sessions.add(session);
-
         HttpHeaders handshakeHeaders = session.getHandshakeHeaders();
         List<String> list = handshakeHeaders.get("x-session-id");
     }
@@ -37,18 +40,6 @@ public class TextWebSocketController implements WebSocketHandler {
 
     @Override
     public void handleMessage(WebSocketSession wsSession, WebSocketMessage<?> message) throws Exception {
-        BinaryMessage payload = (BinaryMessage) message;
-
-
-        ByteBuffer byteBuffer = payload.getPayload();
-
-        byte[] array = byteBuffer.array();
-        LOGGER.info("Receive a message from client: " + array);
-
-        HttpHeaders handshakeHeaders = wsSession.getHandshakeHeaders();
-        List<String> list = handshakeHeaders.get("x-session-id");
-        System.out.println("sessionId是:" + list.get(0));
-
     }
 
     @Override
@@ -83,4 +74,15 @@ public class TextWebSocketController implements WebSocketHandler {
         return onlineCount.decrementAndGet();
     }
 
+
+    /**
+     * 消息推送
+     *
+     * @param msg
+     * @throws IOException
+     */
+    public void sendMessage(String msg) throws IOException {
+        TextMessage textMessage = new TextMessage(msg);
+        sessions.get(0).sendMessage(textMessage);
+    }
 }
