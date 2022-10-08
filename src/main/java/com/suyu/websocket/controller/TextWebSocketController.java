@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
-public class TestWebSocketController implements WebSocketHandler {
+public class TextWebSocketController implements WebSocketHandler {
 
     private static AtomicInteger onlineCount = new AtomicInteger(0);
 
     private static final ArrayList<WebSocketSession> sessions = new ArrayList<>();
 
-    private final Logger LOGGER = LoggerFactory.getLogger(TestWebSocketController.class);
+    private final Logger LOGGER = LoggerFactory.getLogger(TextWebSocketController.class);
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {

@@ -1,6 +1,7 @@
 package com.suyu.websocket.config;
 
-import com.suyu.websocket.controller.TestWebSocketController;
+import com.suyu.websocket.controller.AudioWebSocketController;
+import com.suyu.websocket.controller.TextWebSocketController;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
@@ -17,11 +18,16 @@ import javax.annotation.Resource;
 public class WebSocketConfig extends WebMvcConfigurerAdapter implements WebSocketConfigurer {
 
     @Resource
-    private TestWebSocketController testWebSocketController;
+    private AudioWebSocketController audioWebSocketController;
+
+    @Resource
+    private TextWebSocketController textWebSocketController;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(testWebSocketController, "/socketServer").addInterceptors(new TestHandShakeInterceptor()).setAllowedOrigins("*");
+        registry.addHandler(audioWebSocketController, "/socketServer").addInterceptors(new TestHandShakeInterceptor()).setAllowedOrigins("*");
+        registry.addHandler(textWebSocketController, "/textSocketServer").addInterceptors(new TestHandShakeInterceptor()).setAllowedOrigins("*");
+
     }
 
 }
