@@ -1,8 +1,7 @@
 server:
   port: 8086
-
 spring:
-    devtools:
-      restart:
-        exclude:  static/**,public/**
-        enabled:  true
+  redis:
+    database: 1
+    host: 10.40.7.59
+    port: 6379

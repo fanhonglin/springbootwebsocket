@@ -28,7 +28,7 @@ public class WebSocketController {
     @RequestMapping("sendmsg")
     @ResponseBody
     public String sendMsg(String msg) throws IOException {
-        textWebSocketController.sendMessage(msg);
+        textWebSocketController.sendMessage(msg,null);
         return "success";
     }
 

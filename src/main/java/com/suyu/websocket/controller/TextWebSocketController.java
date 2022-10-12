@@ -1,39 +1,43 @@
 package com.suyu.websocket.controller;
 
-import com.suyu.websocket.entity.Client;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.net.URI;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
+@Slf4j
 public class TextWebSocketController implements WebSocketHandler {
 
     private static AtomicInteger onlineCount = new AtomicInteger(0);
 
-    private static final ArrayList<WebSocketSession> sessions = new ArrayList<>();
-
-    private static CopyOnWriteArraySet<Client> socketServers = new CopyOnWriteArraySet<>();
+    private static final ConcurrentHashMap<String, WebSocketSession> SN2SESSIONMAP = new ConcurrentHashMap<>(256);
 
     private final Logger LOGGER = LoggerFactory.getLogger(TextWebSocketController.class);
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        sessions.add(session);
-        HttpHeaders handshakeHeaders = session.getHandshakeHeaders();
-        List<String> list = handshakeHeaders.get("x-session-id");
+
+        URI uri = session.getUri();
+        String query = uri.getQuery();
+        if (!StringUtils.isEmpty(query)) {
+            String sn = query.split("=")[1];
+            SN2SESSIONMAP.put(sn, session);
+            log.info("文本设备sn:{}已经建立连接", sn);
+        }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        sessions.remove(session);
+        SN2SESSIONMAP.remove(session);
         int onlineNum = subOnlineCount();
         LOGGER.info("Close a webSocket. Current connection number: " + onlineNum);
     }
@@ -48,7 +52,7 @@ public class TextWebSocketController implements WebSocketHandler {
         if (session.isOpen()) {
             session.close();
         }
-        sessions.remove(session);
+        SN2SESSIONMAP.remove(session);
         subOnlineCount();
     }
 
@@ -62,27 +66,22 @@ public class TextWebSocketController implements WebSocketHandler {
     }
 
 
-    public static int getOnlineCount() {
-        return onlineCount.get();
-    }
-
-    public static int addOnlineCount() {
-        return onlineCount.incrementAndGet();
-    }
-
     public static int subOnlineCount() {
         return onlineCount.decrementAndGet();
     }
 
 
-    /**
-     * 消息推送
-     *
-     * @param msg
-     * @throws IOException
-     */
-    public void sendMessage(String msg) throws IOException {
+    public void sendMessage(String msg, String sn) throws IOException {
+        WebSocketSession webSocketSession = SN2SESSIONMAP.get(sn);
+        if (Objects.isNull(webSocketSession)) {
+            log.error("文本发送没有建立websocket连接");
+            return;
+        }
+
         TextMessage textMessage = new TextMessage(msg);
-        sessions.get(0).sendMessage(textMessage);
+        if (Objects.isNull(webSocketSession)) {
+            return;
+        }
+        webSocketSession.sendMessage(textMessage);
     }
 }

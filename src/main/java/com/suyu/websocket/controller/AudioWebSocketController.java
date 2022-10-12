@@ -1,63 +1,89 @@
 package com.suyu.websocket.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.suyu.websocket.engine.ClientInstant;
+import com.suyu.websocket.engine.IatClient;
+import com.suyu.websocket.entity.ClientInfo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.*;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
+@Slf4j
 public class AudioWebSocketController implements WebSocketHandler {
 
     private static AtomicInteger onlineCount = new AtomicInteger(0);
 
-    private static final ArrayList<WebSocketSession> sessions = new ArrayList<>();
-
-    private final Logger LOGGER = LoggerFactory.getLogger(AudioWebSocketController.class);
+    private static final ConcurrentHashMap<String, ClientInfo> SN2ClientInfoMap = new ConcurrentHashMap<>(128);
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        sessions.add(session);
+    public void afterConnectionEstablished(WebSocketSession session) {
+        String sn = getSn(session);
+        log.info("设备sn：{}建立websocket连接", sn);
 
+        // 创建client
+        ClientInstant clientInstant = new ClientInstant(sn);
+
+        ClientInfo clientInfo = ClientInfo.builder().sn(sn).session(session).clientInstant(clientInstant).build();
+
+        SN2ClientInfoMap.put(sn, clientInfo);
+    }
+
+    private String getSn(WebSocketSession session) {
         HttpHeaders handshakeHeaders = session.getHandshakeHeaders();
-        List<String> list = handshakeHeaders.get("x-session-id");
+        List<String> headerSn = handshakeHeaders.get("x-sn");
+        String sn = null;
+        if (!CollectionUtils.isEmpty(headerSn)) {
+            sn = headerSn.get(0);
+            return sn;
+        }
+        return sn;
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        sessions.remove(session);
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        String sn = getSn(session);
+        log.info("设备sn：{}断开websocket连接", sn);
+
+        SN2ClientInfoMap.remove(sn);
+
         int onlineNum = subOnlineCount();
-        LOGGER.info("Close a webSocket. Current connection number: " + onlineNum);
+        log.info("Close a webSocket. Current connection number: " + onlineNum);
     }
 
+
     @Override
-    public void handleMessage(WebSocketSession wsSession, WebSocketMessage<?> message) throws Exception {
+    public void handleMessage(WebSocketSession wsSession, WebSocketMessage<?> message) throws IOException {
+
+        // 获取文本
         BinaryMessage payload = (BinaryMessage) message;
-
-
         ByteBuffer byteBuffer = payload.getPayload();
-
         byte[] array = byteBuffer.array();
-        LOGGER.info("Receive a message from client: " + array);
+        String sn = getSn(wsSession);
 
-        HttpHeaders handshakeHeaders = wsSession.getHandshakeHeaders();
-        List<String> list = handshakeHeaders.get("x-session-id");
-        System.out.println("sessionId是:" + list.get(0));
+        // 获取ClientInfo
+        ClientInstant clientInstant = SN2ClientInfoMap.get(sn).getClientInstant();
+        IatClient client = clientInstant.getClient();
+
+        client.post(array);
 
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        LOGGER.error("Exception occurs on webSocket connection. disconnecting....");
+        log.error("Exception occurs on webSocket connection. disconnecting....");
         if (session.isOpen()) {
             session.close();
         }
-        sessions.remove(session);
+        String sn = getSn(session);
+        SN2ClientInfoMap.remove(sn);
         subOnlineCount();
     }
 
@@ -70,17 +96,7 @@ public class AudioWebSocketController implements WebSocketHandler {
         return true;
     }
 
-
-    public static int getOnlineCount() {
-        return onlineCount.get();
-    }
-
-    public static int addOnlineCount() {
-        return onlineCount.incrementAndGet();
-    }
-
     public static int subOnlineCount() {
         return onlineCount.decrementAndGet();
     }
-
 }
