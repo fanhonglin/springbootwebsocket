@@ -25,7 +25,7 @@ public class IatSessionParam {
     /**
      * [0~600000] 引擎参数,vad后断点值,整数,毫秒,取值范围[0-60000]
      */
-    private String eos = "1000";
+    private String eos = "999999";
 
     private String bos = "999999";
 

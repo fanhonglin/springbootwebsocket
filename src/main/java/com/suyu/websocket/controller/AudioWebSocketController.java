@@ -9,9 +9,9 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.*;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,15 +23,22 @@ public class AudioWebSocketController implements WebSocketHandler {
 
     private static final ConcurrentHashMap<String, ClientInfo> SN2ClientInfoMap = new ConcurrentHashMap<>(128);
 
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         String sn = getSn(session);
         log.info("设备sn：{}建立websocket连接", sn);
 
         // 创建client
-        ClientInstant clientInstant = new ClientInstant(sn);
+        ClientInstant clientInstantLeft = new ClientInstant(sn, 0);
+        ClientInstant clientInstantRight = new ClientInstant(sn, 1);
 
-        ClientInfo clientInfo = ClientInfo.builder().sn(sn).session(session).clientInstant(clientInstant).build();
+        ClientInfo clientInfo = ClientInfo.builder()
+                .sn(sn)
+                .session(session)
+                .clientInstantLeft(clientInstantLeft)
+                .clientInstantRight(clientInstantRight)
+                .build();
 
         SN2ClientInfoMap.put(sn, clientInfo);
     }
@@ -60,20 +67,42 @@ public class AudioWebSocketController implements WebSocketHandler {
 
 
     @Override
-    public void handleMessage(WebSocketSession wsSession, WebSocketMessage<?> message) throws IOException {
+    public void handleMessage(WebSocketSession wsSession, WebSocketMessage<?> message) {
+
+        String sn = getSn(wsSession);
+
+        // 获取ClientInfo ，左声道
+        ClientInstant clientInstantLeft = SN2ClientInfoMap.get(sn).getClientInstantLeft();
+        if (Objects.isNull(clientInstantLeft)) {
+            log.error("sn为：{}的设备没有建立连接", sn);
+            return;
+        }
+
+        // 右声道
+        ClientInstant clientInstant = SN2ClientInfoMap.get(sn).getClientInstantRight();
 
         // 获取文本
         BinaryMessage payload = (BinaryMessage) message;
         ByteBuffer byteBuffer = payload.getPayload();
         byte[] array = byteBuffer.array();
-        String sn = getSn(wsSession);
 
-        // 获取ClientInfo
-        ClientInstant clientInstant = SN2ClientInfoMap.get(sn).getClientInstant();
-        IatClient client = clientInstant.getClient();
+        int halfSize = array.length / 2;
 
-        client.post(array);
+        byte[] left = new byte[halfSize];
+        byte[] right = new byte[halfSize];
 
+        int j = 0;
+        for (int i = 0; i < array.length; i = i + 2) {
+            left[j] = array[i];
+            right[j] = array[i + 1];
+            j++;
+        }
+
+        IatClient clientLeft = clientInstantLeft.getClient();
+        clientLeft.post(left);
+
+        IatClient clientLeftRight = clientInstant.getClient();
+        clientLeftRight.post(right);
     }
 
     @Override
@@ -98,5 +127,12 @@ public class AudioWebSocketController implements WebSocketHandler {
 
     public static int subOnlineCount() {
         return onlineCount.decrementAndGet();
+    }
+
+    public static byte[] byteMerger(byte[] bt1, byte[] bt2) {
+        byte[] bt3 = new byte[bt1.length + bt2.length];
+        System.arraycopy(bt1, 0, bt3, 0, bt1.length);
+        System.arraycopy(bt2, 0, bt3, bt1.length, bt2.length);
+        return bt3;
     }
 }

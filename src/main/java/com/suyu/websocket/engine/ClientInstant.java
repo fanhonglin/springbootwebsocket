@@ -10,17 +10,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
 public class ClientInstant {
 
-    private static final String SERVER = "10.40.7.30:9097";
+//    private static final String SERVER = "10.40.7.30:9097";
+
+    private static final String SERVER = "10.40.7.30:9177";
+
     private static final String sampleRate = "16k";
     private boolean isCompleted = false;
     private IatClient client;
 
-    public ClientInstant(String sn) {
+    public ClientInstant(String sn, int channel) {
 
         final String uuid = UUID.randomUUID().toString().replaceAll("-", "");
         IatSessionParam param = new IatSessionParam(uuid, sampleRate);
@@ -32,7 +37,7 @@ public class ClientInstant {
             @Override
             public void onCallback(IatSessionResult iatSessionResult) {
 
-                log.info("sn:{}, content:{}", sn, JSON.toJSONString(iatSessionResult));
+                log.info("sn:{},channel:{}, content:{}", sn, channel, JSON.toJSONString(iatSessionResult));
 
                 //格式化转写结果
                 String sentence = formatSentence(iatSessionResult.getAnsStr());
@@ -43,7 +48,10 @@ public class ClientInstant {
                 if (!StringUtils.isEmpty(sentence)) {
                     // 发送文档
                     try {
-                        SpringUtils.getBean(TextWebSocketController.class).sendMessage(sentence, sn);
+                        Map<String, Object> resultMap = new HashMap<>();
+                        resultMap.put("track", channel);
+                        resultMap.put("text", sentence);
+                        SpringUtils.getBean(TextWebSocketController.class).sendMessage(JSON.toJSONString(resultMap), sn);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

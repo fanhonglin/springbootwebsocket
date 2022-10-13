@@ -22,6 +22,8 @@ public class ClientInfo implements Serializable {
 
     private WebSocketSession session;
 
-    private ClientInstant clientInstant;
+    private ClientInstant clientInstantLeft;
+
+    private ClientInstant clientInstantRight;
 
 }
