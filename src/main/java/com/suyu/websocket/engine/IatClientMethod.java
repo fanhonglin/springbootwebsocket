@@ -149,111 +149,7 @@ public class IatClientMethod {
         }
 
         System.out.println("循环的次数：" + i);
-//        client.close();
-
     }
-
-
-    /**
-     * @return void
-     * @Author Joey Fan
-     * @Description byte进行引擎转写
-     * @Date 15:22 2022/10/10
-     * @Param [bytes]
-     **/
-    public void doByteConvert(byte[] bytes, String sn) throws IOException {
-
-        CountDownLatch latch = new CountDownLatch(1);
-
-        final String uuid = UUID.randomUUID().toString().replaceAll("-", "");
-        IatSessionParam param = new IatSessionParam(uuid, sampleRate);
-
-//        param.setAue("speex wb");
-
-        IatClient client = new IatClient(SERVER, param);
-
-        //回调方法
-        IatSessionResponse iatSessionResponse = new IatSessionResponse() {
-
-            @Override
-            public void onCallback(IatSessionResult iatSessionResult) {
-
-                log.info("sn:{}, content:{}", sn, JSON.toJSONString(iatSessionResult));
-
-                //格式化转写结果
-                String sentence = formatSentence(iatSessionResult.getAnsStr());
-                //记录转写结果日志
-                logger.info("sentence:{}", sentence);
-                //打印转写结果到文件
-                WriteText.writeLog(sentence);
-
-//                if (!StringUtils.isEmpty(sentence)) {
-//                    // 发送文档
-//                    try {
-//                        textWebSocketController.sendMessage(sentence);
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-
-                if (iatSessionResult.isEndFlag()) {
-                    closeOutFile();
-                }
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                logger.error(uuid + "：IatSessionResponse.onError msg:{}", throwable.getMessage());
-
-                closeOutFile();
-                latch.countDown();
-            }
-
-            @Override
-            public void onCompleted() {
-                logger.debug(uuid + "：onCompleted");
-                closeOutFile();
-                latch.countDown();
-            }
-
-            //关闭连接
-            private void closeOutFile() {
-                //设置为完成
-                isCompleted = true;
-                try {
-                    client.close();
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
-                logger.debug(uuid + "：结果写入完成！");
-            }
-        };
-
-        boolean ret = client.connect(iatSessionResponse);
-        if (!ret) {
-            logger.error("【连接异常】|{}", uuid);
-            return;
-        }
-
-        // bytes2InputStream
-        InputStream inputStream = new ByteArrayInputStream(bytes);
-        BufferedInputStream bufferedInputStream = inputStream2BufferedInputStream(inputStream);
-        byte[] bits = new byte[1280];
-        int len = 0;
-        while ((len = bufferedInputStream.read(bits)) != -1) {
-            if (len == 1280) {
-                client.post(bits);
-                //System.out.println(bits.toString() + "----" + bits.length);
-            } else {
-                byte[] temp_bits = new byte[len];
-                System.arraycopy(bits, 0, temp_bits, 0, len);
-                //System.out.println(temp_bits.toString()+"----"+temp_bits.length);
-
-                client.post(temp_bits);
-            }
-        }
-    }
-
 
     /**
      * 音频文件读取
@@ -267,13 +163,6 @@ public class IatClientMethod {
         if (file.getName().endsWith(".wav")) {
             AudioParams.parseParamsFrom(source, null);
         }
-
-        return new BufferedInputStream(source);
-    }
-
-    private BufferedInputStream inputStream2BufferedInputStream(InputStream source) {
-
-        AudioParams.parseParamsFrom(source, null);
 
         return new BufferedInputStream(source);
     }

@@ -17,19 +17,15 @@ import java.util.UUID;
 @Slf4j
 public class ClientInstant {
 
-//    private static final String SERVER = "10.40.7.30:9097";
-
-    private static final String SERVER = "10.40.7.30:9177";
-
     private static final String sampleRate = "16k";
     private boolean isCompleted = false;
     private IatClient client;
 
-    public ClientInstant(String sn, int channel) {
+    public ClientInstant(String sn, int channel,String engineUrl) {
 
         final String uuid = UUID.randomUUID().toString().replaceAll("-", "");
         IatSessionParam param = new IatSessionParam(uuid, sampleRate);
-        client = new IatClient(SERVER, param);
+        client = new IatClient(engineUrl, param);
 
         //回调方法
         IatSessionResponse iatSessionResponse = new IatSessionResponse() {

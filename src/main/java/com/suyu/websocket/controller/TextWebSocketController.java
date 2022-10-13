@@ -5,6 +5,7 @@ import com.suyu.websocket.util.send.*;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.*;
@@ -14,13 +15,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @Slf4j
 public class TextWebSocketController implements WebSocketHandler {
-
-    private static AtomicInteger onlineCount = new AtomicInteger(0);
 
     private static final ConcurrentHashMap<String, WebSocketSession> SN2SESSIONMAP = new ConcurrentHashMap<>(256);
 
@@ -29,16 +27,16 @@ public class TextWebSocketController implements WebSocketHandler {
     @Resource
     private ApiHelper apiHelper;
 
+    @Value("${serverUrl:ws://222.212.89.53:58080/iot-websocket/socketServer}")
+    private String serverUrl;
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
 
         URI uri = session.getUri();
         String query = uri.getQuery();
         if (!StringUtils.isEmpty(query)) {
-
             String sn = getSn(query);
-
-
             SN2SESSIONMAP.put(sn, session);
             // 开启录音
             orderRealTimeTransfer(Arrays.asList(MD5Util.getDeviceNameBySN(sn)), 1);
@@ -57,8 +55,8 @@ public class TextWebSocketController implements WebSocketHandler {
         map.put("optnum", OptNumUtils.getOptNum());
         map.put("block", 1);
         map.put("ctrl", status);
-//        map.put("url", "ws://222.212.89.53:58080/iot-websocket/socketServer");
-        map.put("url", "ws://10.40.119.20:8086/socketServer");
+        map.put("url", serverUrl);
+//        map.put("url", "ws://10.40.119.20:8086/socketServer");
         gotoDeviceCommonOrder(deviceNames, JSON.toJSONString(map));
     }
 
@@ -123,11 +121,6 @@ public class TextWebSocketController implements WebSocketHandler {
     @Override
     public boolean supportsPartialMessages() {
         return true;
-    }
-
-
-    public static int subOnlineCount() {
-        return onlineCount.decrementAndGet();
     }
 
 

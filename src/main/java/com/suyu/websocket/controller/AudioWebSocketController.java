@@ -4,6 +4,7 @@ import com.suyu.websocket.engine.ClientInstant;
 import com.suyu.websocket.engine.IatClient;
 import com.suyu.websocket.entity.ClientInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,10 +20,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class AudioWebSocketController implements WebSocketHandler {
 
-    private static AtomicInteger onlineCount = new AtomicInteger(0);
-
     private static final ConcurrentHashMap<String, ClientInfo> SN2ClientInfoMap = new ConcurrentHashMap<>(128);
 
+    @Value("${engineUrl:10.40.7.30:9177}")
+    private String engineUrl;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -30,8 +31,8 @@ public class AudioWebSocketController implements WebSocketHandler {
         log.info("设备sn：{}建立websocket连接", sn);
 
         // 创建client
-        ClientInstant clientInstantLeft = new ClientInstant(sn, 0);
-        ClientInstant clientInstantRight = new ClientInstant(sn, 1);
+        ClientInstant clientInstantLeft = new ClientInstant(sn, 0,engineUrl);
+        ClientInstant clientInstantRight = new ClientInstant(sn, 1,engineUrl);
 
         ClientInfo clientInfo = ClientInfo.builder()
                 .sn(sn)
@@ -60,9 +61,6 @@ public class AudioWebSocketController implements WebSocketHandler {
         log.info("设备sn：{}断开websocket连接", sn);
 
         SN2ClientInfoMap.remove(sn);
-
-        int onlineNum = subOnlineCount();
-        log.info("Close a webSocket. Current connection number: " + onlineNum);
     }
 
 
@@ -113,7 +111,6 @@ public class AudioWebSocketController implements WebSocketHandler {
         }
         String sn = getSn(session);
         SN2ClientInfoMap.remove(sn);
-        subOnlineCount();
     }
 
     /*
@@ -125,14 +122,4 @@ public class AudioWebSocketController implements WebSocketHandler {
         return true;
     }
 
-    public static int subOnlineCount() {
-        return onlineCount.decrementAndGet();
-    }
-
-    public static byte[] byteMerger(byte[] bt1, byte[] bt2) {
-        byte[] bt3 = new byte[bt1.length + bt2.length];
-        System.arraycopy(bt1, 0, bt3, 0, bt1.length);
-        System.arraycopy(bt2, 0, bt3, bt1.length, bt2.length);
-        return bt3;
-    }
 }

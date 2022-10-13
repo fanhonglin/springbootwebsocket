@@ -1,7 +1,11 @@
 server:
   port: 8086
-spring:
-  redis:
-    database: 1
-    host: 10.40.7.59
-    port: 6379
+
+#设备websocket连接地址
+serverUrl: 'ws://222.212.89.53:58080/iot-websocket/socketServer'
+
+#引擎地址
+engineUrl: '10.40.7.30:9177'
+
+iot:
+  platform: 'linkapi.xfyun.cn'
