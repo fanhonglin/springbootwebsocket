@@ -3,7 +3,7 @@ server:
 
 #设备websocket连接地址
 serverUrl: 'ws://222.212.89.53:58080/iot-websocket/socketServer'
-
+#serverUrl: 'ws://10.40.119.20:8086/socketServer'
 #引擎地址
 engineUrl: '10.40.7.30:9177'
 

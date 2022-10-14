@@ -26,4 +26,6 @@ public class ClientInfo implements Serializable {
 
     private ClientInstant clientInstantRight;
 
+    private ClientInstant clientInstant;
+
 }

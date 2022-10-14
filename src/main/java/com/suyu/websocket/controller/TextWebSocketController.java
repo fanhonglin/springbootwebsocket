@@ -27,7 +27,7 @@ public class TextWebSocketController implements WebSocketHandler {
     @Resource
     private ApiHelper apiHelper;
 
-    @Value("${serverUrl:ws://222.212.89.53:58080/iot-websocket/socketServer}")
+    @Value("${serverUrl}")
     private String serverUrl;
 
     @Override

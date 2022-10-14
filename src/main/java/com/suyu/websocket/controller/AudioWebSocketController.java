@@ -31,8 +31,8 @@ public class AudioWebSocketController implements WebSocketHandler {
         log.info("设备sn：{}建立websocket连接", sn);
 
         // 创建client
-        ClientInstant clientInstantLeft = new ClientInstant(sn, 0,engineUrl);
-        ClientInstant clientInstantRight = new ClientInstant(sn, 1,engineUrl);
+        ClientInstant clientInstantLeft = new ClientInstant(sn, 0, engineUrl);
+        ClientInstant clientInstantRight = new ClientInstant(sn, 1, engineUrl);
 
         ClientInfo clientInfo = ClientInfo.builder()
                 .sn(sn)
@@ -69,15 +69,21 @@ public class AudioWebSocketController implements WebSocketHandler {
 
         String sn = getSn(wsSession);
 
+        ClientInfo clientInfo = SN2ClientInfoMap.get(sn);
+        if(Objects.isNull(clientInfo)){
+            log.error("sn为：{}的设备没有建立连接,传递了数据", sn);
+            return;
+        }
+
         // 获取ClientInfo ，左声道
-        ClientInstant clientInstantLeft = SN2ClientInfoMap.get(sn).getClientInstantLeft();
+        ClientInstant clientInstantLeft = clientInfo.getClientInstantLeft();
         if (Objects.isNull(clientInstantLeft)) {
             log.error("sn为：{}的设备没有建立连接", sn);
             return;
         }
 
         // 右声道
-        ClientInstant clientInstant = SN2ClientInfoMap.get(sn).getClientInstantRight();
+        ClientInstant clientInstantRight = clientInfo.getClientInstantRight();
 
         // 获取文本
         BinaryMessage payload = (BinaryMessage) message;
@@ -90,17 +96,39 @@ public class AudioWebSocketController implements WebSocketHandler {
         byte[] right = new byte[halfSize];
 
         int j = 0;
-        for (int i = 0; i < array.length; i = i + 2) {
+        for (int i = 0; i < array.length; i = i + 4) {
+
+            // 左声道第一位
             left[j] = array[i];
-            right[j] = array[i + 1];
+
+            // 右声道第一位
+            right[j] = array[i + 2];
+
+            j++;
+            // 左声道第二位
+            left[j] = array[i + 1];
+
+            // 右声道第而位
+            right[j] = array[i + 3];
+
             j++;
         }
 
+
+        // 左声道
         IatClient clientLeft = clientInstantLeft.getClient();
         clientLeft.post(left);
 
-        IatClient clientLeftRight = clientInstant.getClient();
-        clientLeftRight.post(right);
+
+        // 右声道
+        IatClient clientRight = clientInstantRight.getClient();
+        clientRight.post(right);
+
+//
+//        // 原始音频
+//        ClientInstant clientInstant = SN2ClientInfoMap.get(sn).getClientInstantRight();
+//        IatClient client = clientInstant.getClient();
+//        client.post(array);
     }
 
     @Override
