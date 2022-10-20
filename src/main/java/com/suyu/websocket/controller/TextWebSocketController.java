@@ -32,21 +32,27 @@ public class TextWebSocketController implements WebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-
+        // H00CYB0EO186F7
         URI uri = session.getUri();
         String query = uri.getQuery();
         if (!StringUtils.isEmpty(query)) {
             String sn = getSn(query);
             SN2SESSIONMAP.put(sn, session);
             // 开启录音
-            orderRealTimeTransfer(Arrays.asList(MD5Util.getDeviceNameBySN(sn)), 1);
+            orderRealTimeTransfer(Arrays.asList(MD5Util.getDeviceNameBySN(sn.split("_")[0])), 1);
             log.info("文本设备sn:{}已经建立连接", sn);
         }
     }
 
     private String getSn(String query) {
-        String sn = query.split("=")[1];
-        return sn;
+        // ws://222.212.89.53:58080/iot-websocket/textSocketServer?x-session-id=H00CYB0EO186A4&id=x
+        String[] queryArrays = query.split("&");
+        if (queryArrays.length <= 1) {
+            return query.split("=")[1];
+        }
+        String sn = queryArrays[0].split("=")[1];
+        String randomId = queryArrays[1].split("=")[1];
+        return sn + "_" + randomId;
     }
 
     public void orderRealTimeTransfer(List<String> deviceNames, int status) {
@@ -85,7 +91,7 @@ public class TextWebSocketController implements WebSocketHandler {
             String sn = getSn(query);
             SN2SESSIONMAP.remove(sn);
             // 开启录音
-            orderRealTimeTransfer(Arrays.asList(MD5Util.getDeviceNameBySN(sn)), 0);
+            orderRealTimeTransfer(Arrays.asList(MD5Util.getDeviceNameBySN(sn.split("_")[0])), 0);
             log.info("文本设备sn:{}已经断开连接", sn);
         }
     }
@@ -109,7 +115,7 @@ public class TextWebSocketController implements WebSocketHandler {
             String sn = getSn(query);
             SN2SESSIONMAP.remove(sn);
             // 开启录音
-            orderRealTimeTransfer(Arrays.asList(MD5Util.getDeviceNameBySN(sn)), 0);
+            orderRealTimeTransfer(Arrays.asList(MD5Util.getDeviceNameBySN(sn.split("_")[0])), 0);
             log.error("文本设备sn:{}已经断开连接", sn);
         }
     }
@@ -125,7 +131,20 @@ public class TextWebSocketController implements WebSocketHandler {
 
 
     public void sendMessage(String msg, String sn) throws IOException {
-        WebSocketSession webSocketSession = SN2SESSIONMAP.get(sn);
+
+        if (Objects.isNull(SN2SESSIONMAP)) {
+            log.error("文本发送没有建立websocket连接");
+            return;
+        }
+
+        WebSocketSession webSocketSession = null;
+        for (Map.Entry<String, WebSocketSession> entry : SN2SESSIONMAP.entrySet()) {
+            String key = entry.getKey();
+            if (Objects.nonNull(key) && sn.equals(key.split("_")[0])) {
+                webSocketSession = entry.getValue();
+            }
+        }
+//        WebSocketSession webSocketSession = SN2SESSIONMAP.get(sn.split("_"));
         if (Objects.isNull(webSocketSession)) {
             log.error("文本发送没有建立websocket连接");
             return;

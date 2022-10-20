@@ -189,15 +189,15 @@ public class IatClient implements AutoCloseable {
      * @param bytes 发送给引擎的数据
      */
     public synchronized void post(byte[] bytes) {
-        try {
+//        try {
             ByteString samples = ByteString.copyFrom(bytes);
             Dictation.IatRequest request = Dictation.IatRequest.newBuilder().setSamples(samples).setSamplesInfo(iatSessionParam.getSamplesInfo()).setEndFlag(false).build();
             //logger.debug("sid:{}, transter audio data Fragmentation", iatSessionParam.getSid());
             requestStreamObserver.onNext(request);
-        } catch (Exception e) {
-            logger.error("sid:{}, post error", iatSessionParam.getSid(), e);
-            requestStreamObserver.onError(e);
-        }
+//        } catch (Exception e) {
+//            logger.error("sid:{}, post error", iatSessionParam.getSid(), e);
+//            requestStreamObserver.onError(e);
+//        }
     }
 
     /**

@@ -14,7 +14,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @Slf4j
@@ -30,6 +29,10 @@ public class AudioWebSocketController implements WebSocketHandler {
         String sn = getSn(session);
         log.info("设备sn：{}建立websocket连接", sn);
 
+        cacheSession(sn,session);
+    }
+
+    private void cacheSession(String sn, WebSocketSession session) {
         // 创建client
         ClientInstant clientInstantLeft = new ClientInstant(sn, 0, engineUrl);
         ClientInstant clientInstantRight = new ClientInstant(sn, 1, engineUrl);
@@ -69,8 +72,10 @@ public class AudioWebSocketController implements WebSocketHandler {
 
         String sn = getSn(wsSession);
 
+//        log.info("sn为：{}的设备传递了数据", sn);
+
         ClientInfo clientInfo = SN2ClientInfoMap.get(sn);
-        if(Objects.isNull(clientInfo)){
+        if (Objects.isNull(clientInfo)) {
             log.error("sn为：{}的设备没有建立连接,传递了数据", sn);
             return;
         }
@@ -114,16 +119,19 @@ public class AudioWebSocketController implements WebSocketHandler {
             j++;
         }
 
+        try {
+            // 左声道
+            IatClient clientLeft = clientInstantLeft.getClient();
+            clientLeft.post(left);
 
-        // 左声道
-        IatClient clientLeft = clientInstantLeft.getClient();
-        clientLeft.post(left);
-
-
-        // 右声道
-        IatClient clientRight = clientInstantRight.getClient();
-        clientRight.post(right);
-
+            // 右声道
+            IatClient clientRight = clientInstantRight.getClient();
+            clientRight.post(right);
+        } catch (Exception exception) {
+            // 如果call was cancelled，那么新建连接
+            log.error("call was cancelled");
+            cacheSession(sn,wsSession);
+        }
 //
 //        // 原始音频
 //        ClientInstant clientInstant = SN2ClientInfoMap.get(sn).getClientInstantRight();
