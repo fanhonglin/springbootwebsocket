@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.Serializable;
+import java.util.Date;
 
 
 @Data
@@ -27,5 +28,7 @@ public class ClientInfo implements Serializable {
     private ClientInstant clientInstantRight;
 
     private ClientInstant clientInstant;
+
+    private Date createTime;
 
 }

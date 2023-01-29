@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.*;
 
 import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class AudioWebSocketController implements WebSocketHandler {
 
-    private static final ConcurrentHashMap<String, ClientInfo> SN2ClientInfoMap = new ConcurrentHashMap<>(128);
+    public static final ConcurrentHashMap<String, ClientInfo> SN2ClientInfoMap = new ConcurrentHashMap<>(128);
 
     @Value("${engineUrl:10.40.7.30:9177}")
     private String engineUrl;
@@ -42,6 +43,7 @@ public class AudioWebSocketController implements WebSocketHandler {
                 .session(session)
                 .clientInstantLeft(clientInstantLeft)
                 .clientInstantRight(clientInstantRight)
+                .createTime(new Date())
                 .build();
 
         SN2ClientInfoMap.put(sn, clientInfo);

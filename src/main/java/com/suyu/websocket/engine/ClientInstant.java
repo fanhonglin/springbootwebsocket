@@ -3,16 +3,16 @@ package com.suyu.websocket.engine;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.suyu.websocket.controller.AudioWebSocketController;
 import com.suyu.websocket.controller.TextWebSocketController;
+import com.suyu.websocket.entity.ClientInfo;
 import com.suyu.websocket.util.SpringUtils;
 import com.suyu.websocket.util.WriteText;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 public class ClientInstant {
@@ -21,7 +21,7 @@ public class ClientInstant {
     private boolean isCompleted = false;
     private IatClient client;
 
-    public ClientInstant(String sn, int channel,String engineUrl) {
+    public ClientInstant(String sn, int channel, String engineUrl) {
 
         final String uuid = UUID.randomUUID().toString().replaceAll("-", "");
         IatSessionParam param = new IatSessionParam(uuid, sampleRate);
@@ -42,6 +42,25 @@ public class ClientInstant {
                 WriteText.writeLog(sentence);
 
                 if (!StringUtils.isEmpty(sentence)) {
+
+                    ClientInfo clientInfo = AudioWebSocketController.SN2ClientInfoMap.get(sn);
+                    if (Objects.nonNull(clientInfo)) {
+                        Date now = new Date();
+                        // 连接时间
+                        Date createTime = clientInfo.getCreateTime();
+
+                        log.info("转写的时间：{}", (now.getTime() - createTime.getTime()));
+
+                        String ansStr = iatSessionResult.getAnsStr();
+                        JSONObject jsonObject = JSON.parseObject(ansStr);
+                        Long ed = jsonObject.getLong("ed") * 10;
+
+                        long endTime = createTime.getTime() + ed;
+
+                        log.info("转写时间：{}", now.getTime() - endTime);
+
+                    }
+
                     // 发送文档
                     try {
                         Map<String, Object> resultMap = new HashMap<>();
