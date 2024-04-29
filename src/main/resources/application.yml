@@ -3,9 +3,10 @@ server:
 
 #设备websocket连接地址
 #serverUrl: 'ws://222.212.89.53:58080/iot-websocket/socketServer'
-serverUrl: 'ws://10.40.119.20:8086/socketServer'
+serverUrl: 'ws://10.40.116.52:8086/socketServer'
 #引擎地址
-engineUrl: '10.40.7.30:9097'
+#engineUrl: '10.40.7.30:9097'
+engineUrl: '172.31.160.181:9097'
 
 iot:
   platform: 'linkapi.xfyun.cn'

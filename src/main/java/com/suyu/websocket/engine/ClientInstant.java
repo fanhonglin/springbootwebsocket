@@ -12,7 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 @Slf4j
 public class ClientInstant {
@@ -42,25 +45,20 @@ public class ClientInstant {
                 WriteText.writeLog(sentence);
 
                 if (!StringUtils.isEmpty(sentence)) {
-
-                    ClientInfo clientInfo = AudioWebSocketController.SN2ClientInfoMap.get(sn);
-                    if (Objects.nonNull(clientInfo)) {
-                        Date now = new Date();
-                        // 连接时间
-                        Date createTime = clientInfo.getCreateTime();
-
-                        log.info("转写的时间：{}", (now.getTime() - createTime.getTime()));
-
-                        String ansStr = iatSessionResult.getAnsStr();
-                        JSONObject jsonObject = JSON.parseObject(ansStr);
-                        Long ed = jsonObject.getLong("ed") * 10;
-
-                        long endTime = createTime.getTime() + ed;
-
-                        log.info("转写时间：{}", now.getTime() - endTime);
-
-                    }
-
+//                    ClientInfo clientInfo = AudioWebSocketController.SN2ClientInfoMap.get(sn);
+//                    if (Objects.nonNull(clientInfo)) {
+//                        Date now = new Date();
+////                         连接时间
+//                        Date createTime = clientInfo.getCreateTime();
+//
+//                        log.info("转写的时间：{}", (now.getTime() - createTime.getTime()));
+//                        String ansStr = iatSessionResult.getAnsStr();
+//                        JSONObject jsonObject = JSON.parseObject(ansStr);
+//                        Long ed = jsonObject.getLong("ed") * 10;
+//
+//                        long endTime = createTime.getTime() + ed;
+//                        log.info("转写时间：{}", now.getTime() - endTime);
+//                    }
                     // 发送文档
                     try {
                         Map<String, Object> resultMap = new HashMap<>();
